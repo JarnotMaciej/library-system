@@ -1,0 +1,7 @@
+1 Hobbit J.R.R. Tolkien 1 2 7 2 2023
+2 test autor autor 1 1 7 3 2023
+3 tytul nonam nazwisk 0
+4 no-title nejm no-author-surname 0
+5 no-title no-author-name no-author-surname 0
+6 ksiazka test test 0
+7 test test test 0

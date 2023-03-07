@@ -2,8 +2,8 @@
  * @file functions.cpp
  * @author Maciej Jarnot (mj300741@student.polsl.pl)
  * @brief Library system
- * @version 
- * @date 
+ * @version v2
+ * @date 07.03.2023
  *
  */
 
@@ -407,7 +407,7 @@ void saveLibrary(const library &l)
             std::ofstream saveLibraryFile("library.txt");
             if (saveLibraryFile)
             {
-                saveLibraryFile << l.libraryName << " " << l.cityName << std::endl;
+                saveLibraryFile << l.libraryName << " " << l.cityName << " " << l.lengthOfBorrow << std::endl;
                 std::cout << "   Library " << l.libraryName << " in " << l.cityName << " saved to library.txt" << std::endl;
             }
             else
@@ -429,7 +429,7 @@ void saveLibrary(const library &l)
                 {
                     saveBooksFile << i.bookID << " " << i.title << " " << i.authorName << " " << i.authorSurname << " " << i.borrowed;
                     if (i.borrowed == true)
-                        saveBooksFile << " " << i.borrowedBy << std::endl;
+                        saveBooksFile << " " << i.borrowedBy << " " << i.borrowedDate.displayDay() << " " <<  i.borrowedDate.displayMonth() << " "<< i.borrowedDate.displayYear() << std::endl;
                     else
                         saveBooksFile << std::endl;
                 }
@@ -578,7 +578,7 @@ void openLibrary(library &l)
         {
             std::getline(saveLibraryFile, line);
             std::istringstream ss(line);
-            ss >> l.libraryName >> l.cityName;
+            ss >> l.libraryName >> l.cityName >> l.lengthOfBorrow;
         }
         else
         {
@@ -595,7 +595,8 @@ void openLibrary(library &l)
         std::ifstream saveBooksFile("books.txt");
         long int bID, borrowedBy;
         std::string line, title, aName, aSurname;
-        bool borrowed;
+        int day, month, year;
+        bool borrowed, expired;
         if (saveBooksFile)
         {
             int i = 0;
@@ -606,9 +607,12 @@ void openLibrary(library &l)
                 l.addBook(title, aName, aSurname);
                 if (borrowed)
                 {
-                    ss >> borrowedBy;
+                    ss >> borrowedBy >> day >> month >> year;
+                    date d(day, month, year);
                     l.libraryBook[i].borrowedBy = borrowedBy;
                     l.libraryBook[i].borrowed = true;
+                    l.libraryBook[i].borrowedDate = d;
+                    l.libraryBook[i].expired = l.libraryBook[i].isExpired(l.lengthOfBorrow);
                 }
                 i++;
             }
@@ -667,6 +671,8 @@ book &book::borrow(user &u)
 {
     borrowedBy = u.userID;
     borrowed = true;
+    borrowedDate = currentDate();
+    expired = false;
     return *this;
 }
 
@@ -675,6 +681,26 @@ book &book::returnBook(user &u)
     borrowedBy = 0;
     borrowed = false;
     return *this;
+}
+
+bool book::isExpired(int days)
+{
+    if(borrowed)
+    {
+        date d = currentDate();
+        if (d - borrowedDate > days)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
 }
 
 user::user()
@@ -773,12 +799,107 @@ date &operator--(date &d)
     return d;
 }
 
+std::ostream &operator<<(std::ostream &s, const date &d)
+{
+    if(d.day < 10)
+    {
+        s << "0" << d.day << ".";
+    }
+    else
+    {
+        s << d.day << ".";
+    }
+    if(d.month < 10)
+    {
+        s << "0" << d.month << ".";
+    }
+    else
+    {
+        s << d.month << ".";
+    }
+    s << d.year;
+    return s;
+}
+
+std::istream &operator>>(std::istream &s, date &d)
+{
+    s >> d.day >> d.month >> d.year;
+    return s;
+}
+
+date &operator+(date &d, int days)
+{
+    for (int i = 0; i < days; i++)
+    {
+        ++d;
+    }
+    return d;
+}
+
+date &operator-(date &d, int days)
+{
+    for (int i = 0; i < days; i++)
+    {
+        --d;
+    }
+    return d;
+}
+
+int operator-(date &d1, date &d2)
+{
+    constexpr int daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int days = 0;
+    if (d1.year == d2.year)
+    {
+        if (d1.month == d2.month)
+        {
+            days = d1.day - d2.day;
+        }
+        else
+        {
+            for (int i = d2.month; i < d1.month; i++)
+            {
+                days += daysInMonth[i - 1];
+            }
+            days += d1.day - d2.day;
+        }
+    }
+    else
+    {
+        for (int i = d2.month; i <= 12; i++)
+        {
+            days += daysInMonth[i - 1];
+        }
+        days -= d2.day;
+        for (int i = 1; i < d1.month; i++)
+        {
+            days += daysInMonth[i - 1];
+        }
+        days += d1.day;
+        for (int i = d2.year + 1; i < d1.year; i++)
+        {
+            if (d1.isLeapYear())
+            {
+                days += 366;
+            }
+            else
+            {
+                days += 365;
+            }
+        }
+    }
+    return days;
+}
+
 std::ostream &operator<<(std::ostream &s, const book &bookToDisplay)
 {
     s << "  " << bookToDisplay.bookID << "|\t" << bookToDisplay.title << "\t\t" << bookToDisplay.authorName << " " << bookToDisplay.authorSurname << "\t\t";
     if (bookToDisplay.borrowed == true)
     {
-        s << "Borrowed by: " << bookToDisplay.borrowedBy;
+        s << "Borrowed by: " << bookToDisplay.borrowedBy << " since " << bookToDisplay.borrowedDate << "\t\t";
+        if(bookToDisplay.expired){
+            s << "Expired";
+        }
     }
     else
     {
@@ -799,6 +920,7 @@ library::library()
 {
     libraryName = "Main_library";
     cityName = "Gliwice";
+    lengthOfBorrow = 14;
 }
 
 void library::libraryInfo()
@@ -808,7 +930,8 @@ void library::libraryInfo()
               << "  Library name: \t" << libraryName << std::endl
               << "  City of library:\t" << cityName << std::endl
               << "  Number of books:\t" << numOfBooks << std::endl
-              << "  Number of users:\t" << numOfUsers << std::endl;
+              << "  Number of users:\t" << numOfUsers << std::endl
+              << "  Length of borrow:\t" << lengthOfBorrow << " days" << std::endl;
 }
 
 void library::addBook()
@@ -1249,28 +1372,19 @@ date::date()
 	year = 2000;
 }
 
-void date::displayDay()
+int date::displayDay()
 {
-    if(day < 10)
-    {
-        std::cout << "0" << day;
-    }
-    else
-    {
-        std::cout << day;
-    }
+    return day;
 }
 
-void date::displayMonth()
+int date::displayMonth()
 {
-    if(month < 10)
-    {
-        std::cout << "0" << month;
-    }
-    else
-    {
-        std::cout << month;
-    }
+    return month;
+}
+
+int date::displayYear()
+{
+    return year;
 }
 
 void date::display()
@@ -1299,6 +1413,7 @@ bool date::isValid()
     }
 
     //Check the day is valid for the month
+    constexpr int daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     int maxDay = daysInMonth[month - 1];
     if (month == 2 && isLeapYear())
     {

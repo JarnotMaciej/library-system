@@ -2,8 +2,8 @@
  * @file functions.h
  * @author Maciej Jarnot (mj300741@student.polsl.pl)
  * @brief Library system
- * @version 
- * @date 
+ * @version v2
+ * @date 07.03.2023
  *
  */
 
@@ -19,8 +19,6 @@
 #include <vector>
 #include <list>
 #include <cstdlib>
-
-constexpr int daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 class date;
 class error;
@@ -75,13 +73,21 @@ public:
         }
     };
 
+    /** Destructor
+    */
+    ~date(){}; //destructor
+
     /** Method which displays day
      */
-    void displayDay();
+    int displayDay();
 
     /** Method which displays month
      */
-    void displayMonth();
+    int displayMonth();
+
+    /** Method which displays year
+     */
+    int displayYear();
 
     /** Method which displays date
      */
@@ -114,6 +120,27 @@ public:
     /** friend, decrement operator
      */
     friend date &operator--(date &d);
+
+    /** friend, operator used to display date
+     */
+    friend std::ostream &operator<<(std::ostream &s, const date &d);
+
+    /** friend, operator used to enter date
+    */
+    friend std::istream &operator>>(std::istream &s, date &d);
+
+    /** friend, operator used to add days to date
+    */
+    friend date &operator+(date &d, int days);
+
+    /** friend, operator used to subtract days from date
+    */
+    friend date &operator-(date &d, int days);
+
+    /** friend, operator used to subtract date from date
+    */
+    friend int operator-(date &d1, date &d2);
+
 };
 
 /** Class which represents book element in library
@@ -127,6 +154,8 @@ class book
     long int borrowedBy;       /**< ID of user, who borrowed book*/
     static long int ID;        /**< Counter of IDs*/
     long int bookID;           /**< Primary key, unique ID of book*/
+    date borrowedDate;         /**< Date of borrowing book*/
+    bool expired;              /**< Indication if book is expired or not*/
 
 public:
     /** Default book constructor
@@ -144,13 +173,16 @@ public:
     book(std::string t, std::string an, std::string asn);
     // void display();
 
-    /** Method assigns user ID to the book
+    /** Method assigns user ID and date of borrowing to book
      */
     book &borrow(user &u);
 
     /** Method which checks if current user can return the book, and if yes - it allows to do it
      */
     book &returnBook(user &u);
+
+    /** Method which checks if the book ius expired*/
+    bool isExpired(int days);
 
     friend std::ostream &operator<<(std::ostream &s, const book &bookToDisplay);
     friend void saveLibrary(const library &l);
@@ -224,6 +256,7 @@ public:
     /** Default book constructor
      * 	libraryName = "Main library"
      *	cityName = "Gliwice"
+     *  lengthOfBorrow = 14
      */
     library();
 
