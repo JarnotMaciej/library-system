@@ -1,5 +1,8 @@
 # Library system
 
+![GitHub](https://img.shields.io/github/license/JarnotMaciej/library-system?style=flat-square) ![GitHub](https://img.shields.io/github/languages/top/JarnotMaciej/library-system?style=flat-square) ![GitHub](https://img.shields.io/github/languages/code-size/JarnotMaciej/library-system?style=flat-square) 
+
+
 ## Short description
 
 This repository contains a software system for managing book borrowing in a library. The system is designed to provide a console interface for users to search for and borrow books, while also allowing the library to manage its collection and track which books are currently checked out. 
